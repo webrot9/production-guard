@@ -1,0 +1,61 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python }}
+      - run: uv run --extra dev ruff check skills tests
+      - run: uv run --extra dev mypy
+      - run: uv run --extra dev pytest -q
+
+  # The folder an agent installs must run on a bare interpreter: no
+  # dependencies, no install step. Prove it on the oldest supported Python.
+  bare-skill:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python3 -I skills/fastapi-production-guard/scripts/fpg.py scan tests/fixtures/ownership/safe --fail-on high
+      - run: |
+          set +e
+          python3 -I skills/fastapi-production-guard/scripts/fpg.py scan tests/fixtures/ownership
+          test $? -eq 1
+
+  # The skills CLI must find exactly one skill, with the name in its frontmatter.
+  skills-cli:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npx -y skills@1.7.4 add ./ --list | tee skills.txt
+        env:
+          DISABLE_TELEMETRY: "1"
+      - run: grep -q "fastapi-production-guard" skills.txt
+
+  action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./
+        with:
+          path: tests/fixtures/balances/safe
+          args: --rule FPG003 --exclude local_lock.py

@@ -1,0 +1,27 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  pypi:
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write  # PyPI trusted publishing; no token is stored anywhere
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      # A tag that disagrees with the version in the files would publish one
+      # version under another's name.
+      - name: Tag matches every version string
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          uv run --extra dev pytest -q tests/test_packaging.py
+          python3 -c 'import sys, tomllib; v = tomllib.load(open("pyproject.toml", "rb"))["project"]["version"]; sys.exit(f"tag {sys.argv[1]} != version {v}" if v != sys.argv[1] else 0)' "$tag"
+      - run: uv build
+      - uses: pypa/gh-action-pypi-publish@release/v1

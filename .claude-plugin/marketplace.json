@@ -1,0 +1,15 @@
+{
+  "name": "fastapi-production-guard",
+  "description": "FastAPI Production Guard: executed IDOR, webhook-idempotency and credit-race checks for FastAPI codebases.",
+  "owner": {
+    "name": "Roberto Capobianco",
+    "url": "https://github.com/webrot9"
+  },
+  "plugins": [
+    {
+      "name": "fastapi-production-guard",
+      "source": "./",
+      "description": "Executed IDOR, webhook-idempotency and credit-race checks for FastAPI apps."
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+name: FastAPI Production Guard
+description: Executed IDOR, webhook-idempotency and credit-race checks for FastAPI apps.
+author: Roberto Capobianco
+branding:
+  icon: shield
+  color: green
+
+inputs:
+  path:
+    description: Directory (or file) to scan, relative to the workspace.
+    default: "."
+  fail-on:
+    description: Lowest confidence that fails the step, "high" or "medium".
+    default: "high"
+  args:
+    description: Extra arguments for `scan`, e.g. "--exclude scripts/* --rule FPG001".
+    default: ""
+  sarif:
+    description: Also write a SARIF report to this path, for github/codeql-action/upload-sarif.
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    # Inputs travel as environment variables, never interpolated into the
+    # script: a path or an argument is data, not shell.
+    - name: SARIF report
+      if: inputs.sarif != ''
+      shell: bash
+      env:
+        FPG_PATH: ${{ inputs.path }}
+        FPG_ARGS: ${{ inputs.args }}
+        FPG_SARIF: ${{ inputs.sarif }}
+      run: |
+        # shellcheck disable=SC2086
+        python3 "$GITHUB_ACTION_PATH/skills/fastapi-production-guard/scripts/fpg.py" \
+          scan "$FPG_PATH" --format sarif --output "$FPG_SARIF" $FPG_ARGS || true
+    - name: Scan
+      shell: bash
+      env:
+        FPG_PATH: ${{ inputs.path }}
+        FPG_ARGS: ${{ inputs.args }}
+        FPG_FAIL_ON: ${{ inputs.fail-on }}
+      run: |
+        # shellcheck disable=SC2086
+        python3 "$GITHUB_ACTION_PATH/skills/fastapi-production-guard/scripts/fpg.py" \
+          scan "$FPG_PATH" --format github --fail-on "$FPG_FAIL_ON" $FPG_ARGS

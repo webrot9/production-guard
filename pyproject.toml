@@ -1,0 +1,80 @@
+[build-system]
+requires      = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name            = "fastapi-production-guard"
+version         = "0.1.0"
+description     = "Three executed checks for FastAPI apps: resource ownership (IDOR), webhook idempotency and credit-consumption races."
+readme          = "README.md"
+license         = "MIT"
+license-files   = ["LICENSE"]
+requires-python = ">=3.11"
+authors         = [{ name = "Roberto Capobianco" }]
+keywords        = ["fastapi", "security", "idor", "webhooks", "idempotency", "race-condition", "static-analysis", "claude-code", "codex", "agent-skills"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Framework :: FastAPI",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Security",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Software Development :: Testing",
+]
+# No runtime dependencies, on purpose. A checker you are asked to trust with
+# your codebase should be readable in one sitting, and `uvx` should start it
+# in under a second. Everything here is the standard library: `ast` for the
+# scan, `urllib` and threads for the probes, `tomllib` for configuration.
+dependencies = []
+
+[project.urls]
+Homepage      = "https://github.com/webrot9/production-guard"
+Documentation = "https://github.com/webrot9/production-guard#readme"
+Issues        = "https://github.com/webrot9/production-guard/issues"
+
+[project.scripts]
+fastapi-production-guard = "fastapi_production_guard.cli:main"
+fpg                      = "fastapi_production_guard.cli:main"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+    "ruff>=0.7",
+    "mypy>=1.13",
+]
+
+# The package lives inside the skill, not in `src/`. `npx skills add` and the
+# Claude plugin installer copy the skill folder and nothing else, so a skill
+# that called out to a separately installed checker would arrive unable to
+# run. Here the folder an agent installs *is* the checker: `scripts/fpg.py`
+# runs it with nothing but the Python the machine already has. PyPI gets the
+# same files, for CI and for people who never use an agent.
+[tool.hatch.build.targets.wheel]
+packages = ["skills/fastapi-production-guard/scripts/fastapi_production_guard"]
+
+[tool.hatch.build.targets.sdist]
+include = ["skills", "tests", "docs", "README.md", "LICENSE", "CHANGELOG.md"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+# The fixtures are the vulnerable code the rules exist to find. Linting them
+# would mean "fixing" exactly the patterns the tests depend on.
+extend-exclude = ["tests/fixtures", "examples"]
+
+[tool.ruff.lint]
+select = ["E", "F", "B", "SIM", "UP", "I", "PIE", "RUF"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["fastapi_production_guard", "tests"]
+
+[tool.mypy]
+strict = true
+files = ["skills/fastapi-production-guard/scripts"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

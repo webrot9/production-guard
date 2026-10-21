@@ -1,0 +1,14 @@
+{
+  "name": "fastapi-production-guard",
+  "displayName": "FastAPI Production Guard",
+  "version": "0.1.0",
+  "description": "Executed checks for FastAPI apps: IDOR on user-owned rows, webhook handlers without event-id deduplication, and credit/balance updates that race. A deterministic scanner and HTTP probes decide; the agent fixes and re-runs.",
+  "author": {
+    "name": "Roberto Capobianco",
+    "url": "https://github.com/webrot9"
+  },
+  "homepage": "https://github.com/webrot9/production-guard",
+  "repository": "https://github.com/webrot9/production-guard",
+  "license": "MIT",
+  "keywords": ["fastapi", "security", "idor", "webhooks", "idempotency", "race-condition", "sqlalchemy", "python"]
+}
