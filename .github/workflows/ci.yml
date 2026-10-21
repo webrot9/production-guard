@@ -55,7 +55,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # The safe fixtures with their models beside them: without models.py
+      # the scan cannot see the optimistic lock that makes one of them safe.
       - uses: ./
         with:
-          path: tests/fixtures/balances/safe
-          args: --rule FPG003 --exclude local_lock.py
+          path: tests/fixtures/balances
+          args: --rule FPG003 --exclude vulnerable/* --exclude safe/local_lock.py

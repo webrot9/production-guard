@@ -13,6 +13,7 @@ import ast
 import fnmatch
 import os
 import re
+import sys
 from collections import defaultdict
 from collections.abc import Iterator
 from dataclasses import dataclass, field
@@ -159,7 +160,9 @@ class Project:
             elif isinstance(node, ast.AnnAssign) and node.value is not None:
                 if isinstance(node.target, ast.Name):
                     self.assignments[node.target.id].append((m, node.value))
-            elif isinstance(node, ast.TypeAlias) and isinstance(node.name, ast.Name):
+            # `type X = ...` is 3.12 syntax, and ast.TypeAlias does not exist on
+            # 3.11; checking the version first keeps the attribute unread there.
+            elif sys.version_info >= (3, 12) and isinstance(node, ast.TypeAlias):
                 self.assignments[node.name.id].append((m, node.value))
             elif isinstance(node, (ast.If, ast.Try)):
                 # `if TYPE_CHECKING:` blocks and import fallbacks hold real definitions.
